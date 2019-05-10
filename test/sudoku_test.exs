@@ -17,5 +17,6 @@ defmodule SudokuTest do
     game = Sudoku.build_from_data(data)
     assert(Sudoku.get(game, { 0, 0 }) == MapSet.new([4]))
     assert(Sudoku.get(game, { 0, 3 }) == MapSet.new([8]))
+    assert(Sudoku.get(game, { 0, 1 }) == MapSet.new([1, 2, 3, 4, 5, 6, 7, 8, 9]))
   end
 end

@@ -14,24 +14,20 @@ defmodule Sudoku do
   . 9 5 . . 7 . . 6
   """
   def build_from_data(input_file_data) do
-    content = input_file_data
-              |> String.split("\n")
-              |> Enum.map(&String.trim/1)
-              |> Enum.map(&String.split/1)
-              |> Enum.filter(fn x -> !Enum.empty?(x) end)
-
-    Map.new(
-      for i <- 0..8 do
-        for j <- 0..8 do        
-          v = Enum.at(Enum.at(content, i), j) 
-          if v != "." do
-            { { i, j }, MapSet.new([String.to_integer(v)]) }
-          end
-        end
-      end
-      |> Enum.flat_map(fn x -> x end)
-      |> Enum.filter(fn x -> x != nil end)
-    )
+    input_file_data
+    |> String.split("\n")
+    |> Enum.map(&String.trim/1)
+    |> Enum.map(&String.split/1)
+    |> Enum.filter(fn x -> !Enum.empty?(x) end)
+    |> Enum.flat_map(fn x -> x end)
+    |> Enum.with_index
+    |> Enum.filter(fn { val, _index } -> val != "." end)
+    |> Enum.map(fn { val, index } -> {
+      { div(index, 9), rem(index, 9) },
+      MapSet.new([String.to_integer(val)])
+    }
+    end)
+    |> Map.new
   end
 
   @doc """
