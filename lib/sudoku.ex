@@ -28,6 +28,17 @@ defmodule Sudoku do
     }
     end)
     |> Map.new
+    |> fill_blanks
+  end
+
+  def fill_blanks(game) do
+    for i <- 0..8 do
+      for j <- 0..8 do
+        { { i, j }, Sudoku.get(game, { i, j }) }
+      end
+    end
+    |> Enum.flat_map(fn x -> x end)
+    |> Map.new
   end
 
   @doc """
@@ -43,5 +54,79 @@ defmodule Sudoku do
 
   def get(game, index) do
     Map.get(game, index, MapSet.new([1, 2, 3, 4, 5, 6, 7, 8, 9]))
+  end
+
+  def same_column_indexes({ row, col }) do
+    0..8
+    |> Enum.to_list
+    |> List.delete(row)
+    |> Enum.map(fn i -> { i, col } end)
+  end
+
+  def same_row_indexes({ row, col }) do
+    0..8
+    |> Enum.to_list
+    |> List.delete(col)
+    |> Enum.map(fn i -> { row, i } end)
+  end
+
+  def same_box_indexes({ row, col }) do
+    for i <- 0..2 do
+      for j <- 0..2 do
+        { (div(row, 3) * 3) + i, (div(col, 3) * 3) + j }
+      end
+    end
+    |> Enum.flat_map(fn x -> x end)
+    |> Enum.filter(fn { i, j } -> { i, j } != { row, col } end)
+  end
+
+  def process_constraints_at(game, index) do
+    constraint_indexes = [
+      same_row_indexes(index),
+      same_column_indexes(index),
+      same_box_indexes(index),
+    ]
+    |> Enum.reduce(&Enum.concat/2)
+
+    constraint_values = Map.take(game, constraint_indexes)
+                        |> Map.values
+                        |> Enum.filter(fn v -> MapSet.size(v) == 1 end)
+                        |> Enum.reduce(MapSet.new([]), &MapSet.union/2)
+
+    MapSet.difference(
+      Sudoku.get(game, index),
+      constraint_values
+    )
+  end
+
+  def process_constraints(game) do
+    game
+    |> Enum.map(fn { index, _ } ->
+      { index, process_constraints_at(game, index) }
+    end)
+    |> Map.new
+  end
+
+  def process_all_constraints(game) do
+    newgame = process_constraints(game)
+    if newgame == game do
+      newgame
+    else
+      process_all_constraints(newgame)
+    end
+  end
+
+  def print(game) do
+    for i <- 0..8 do
+      for j <- 0..8 do
+        v = Sudoku.get(game, {i, j})
+        if MapSet.size(v) == 1 do
+          " #{List.first(MapSet.to_list(v))} "
+        else
+          " . "
+        end
+      end
+      |> IO.puts
+    end
   end
 end
